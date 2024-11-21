@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Snail Climb Simulator</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            padding: 0;
+            background-color: #f4f4f9;
+            color: #333;
+        }
+
+        h1 {
+            text-align: center;
+            color: #5a5c61;
+        }
+
+        img {
+            display: block;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: auto;
+            background: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        input[type="file"] {
+            display: block;
+            margin: 10px 0;
+        }
+
+        button {
+            background-color: #5a5c61;
+            color: #fff;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background-color: #484a4f;
+        }
+
+        ul {
+            list-style-type: none;
+            padding: 0;
+        }
+
+        li {
+            margin: 5px 0;
+        }
+
+        footer {
+            background: black;
+            color: whitesmoke;
+            text-align: center;
+            padding: 2rem 0;
+            margin-top: 25px;
+            border-radius: 25px;
+        }
+
+        .valid {
+            color: green;
+            font-size: 25px;
+        }
+
+        .invalid {
+            color: red;
+
+        }
+
+        .failure {
+            color: #9B2B18;
+            font-size: 25px;
+        }
+
+        .result {
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+<img src="https://64.media.tumblr.com/0df1904130ab35b7aa76efced1f2f99d/tumblr_n7zdwaSZxR1sp6e2vo1_250.gifv"
+     alt="Caracol Hora de Aventuras" width="150" height="145">
+<h1>Snail Climb Simulator</h1>
+<div class="container">
+    <p>Carga un archivo <code>.txt</code> con las entradas para simular el ascenso del caracol.</p>
+    <p>Cada línea del archivo deberá contener cuatro enteros H, U, D y F, separados por un solo espacio.</p>
+    <pre>
+H U D F
+6 3 1 10
+10 2 1 50
+0 0 0 0
+    </pre>
+    <p>H = Altura del pozo <br>U = Distancia Escalada en 1 día<br>D = Distancia en metros que resbala el caracol<br>F =
+        Factor de fatiga</p>
+    <input type="file" id="fileInput" accept=".txt">
+    <ul id="results"></ul>
+</div>
+<footer>
+    <small>Developed and designed by <b>José Salvador Nuño Toledo.</b> ©2024.</small>
+</footer>
+<script>
+    document.getElementById("fileInput").addEventListener("change", function (event) {
+        const file = event.target.files[0];
+        let end_of_file = false
+        if (!file) return;
+
+        const resultsList = document.getElementById("results");
+        resultsList.innerHTML = ""; // Limpiar resultados previos
+
+        const reader = new FileReader();
+        reader.onload = function (e) {
+            const lines = e.target.result.split("\n");
+
+
+            lines.forEach((line, index) => {
+                if (end_of_file) return;
+                line = line.trim(); // Eliminar espacios en blanco alrededor
+                const resultItem = document.createElement("li");
+
+                if (line === "0 0 0 0") {
+                    resultItem.textContent = `Línea ${index + 1}: Fin de entrada detectado.`;
+                    resultItem.className = "valid";
+                    resultsList.appendChild(resultItem);
+                    end_of_file = true;
+                    return;
+                }
+
+                const parts = line.split(" ").map(Number);
+
+
+                if (parts.length !== 4 || parts.some(isNaN)) {
+                    resultItem.textContent = `Línea ${index + 1}: Formato no válido (se esperan 4 números).`;
+                    resultItem.className = "invalid";
+                } else if (parts.some(n => n < 0)) {
+                    resultItem.textContent = `Línea ${index + 1}: Contiene números negativos.`;
+                    resultItem.className = "invalid";
+                } else if (parts.some(n => n > 100)) {
+                    resultItem.textContent = `Línea ${index + 1}: Contiene números mayores a 100.`;
+                    resultItem.className = "invalid";
+                } else {
+                    const [class_result, text_result] = simulateSnailClimb(parts[0], parts[1], parts[2], parts[3]);
+                    resultItem.textContent = `Línea ${index + 1}: ${text_result}`;
+                    resultItem.className = class_result;
+                }
+
+                resultsList.appendChild(resultItem);
+            });
+        };
+
+        reader.readAsText(file);
+    });
+
+    function simulateSnailClimb(H, U, D, F) {
+        let height = 0.0;
+        let day = 0;
+        const fatigueFactor = U * (F / 100);
+        let currentClimb = U;
+
+        while (true) {
+            day += 1;
+
+            // Durante el día
+            if (currentClimb > 0) {
+                height += currentClimb;
+            }
+
+            if (height > H) {
+                return ['valid', `🕳️✅🐌 Success on day ${day} `];
+            }
+
+            // Durante la noche
+            height -= D;
+
+            if (height < 0) {
+                return ['failure', `🪦🐌🪽️ Failure on day ${day}`];
+            }
+
+            // Reducir escalada por fatiga
+            currentClimb -= fatigueFactor;
+        }
+    }
+</script>
+</body>
+</html>
